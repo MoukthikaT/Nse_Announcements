@@ -142,6 +142,46 @@ async function pollAnnouncements() {
       state.sourceCount = sourceCount;
       state.lastSuccessfulUpdate = scannedAt;
 
+      const marketCandidates = candidates.filter(
+        ({ id }) => !storedById.get(id)?.market,
+      );
+      const symbols = [
+        ...new Set(marketCandidates.map(({ symbol }) => symbol)),
+      ];
+      const marketBySymbol = new Map();
+      const errors = [];
+
+      for (let offset = 0; offset < symbols.length; offset += 3) {
+        await Promise.all(
+          symbols.slice(offset, offset + 3).map(async (symbol) => {
+            try {
+              marketBySymbol.set(symbol, await nse.getMarketData(symbol));
+            } catch (error) {
+              errors.push(`${symbol}: ${error.message}`);
+            }
+          }),
+        );
+      }
+
+      for (const announcement of candidates) {
+        announcement.market =
+          marketBySymbol.get(announcement.symbol) ??
+          storedById.get(announcement.id)?.market ??
+          null;
+      }
+
+      const currentByIdForMarket = new Map(
+        candidates.map((item) => [item.id, item]),
+      );
+      const marketUpdatedAnnouncements = state.announcements.map((existing) => {
+        const current = currentByIdForMarket.get(existing.id);
+        return current
+          ? { ...existing, market: current.market ?? existing.market }
+          : existing;
+      });
+      await saveState(marketUpdatedAnnouncements, sourceCount, scannedAt);
+      state.announcements = marketUpdatedAnnouncements;
+
       for (let offset = 0; offset < candidates.length; offset += 2) {
         await Promise.all(
           candidates.slice(offset, offset + 2).map(async (announcement) => {
@@ -177,27 +217,9 @@ async function pollAnnouncements() {
         );
       }
 
-      const symbols = [...new Set(fresh.map(({ symbol }) => symbol))];
-      const marketBySymbol = new Map();
-      const errors = [];
-
-      for (let offset = 0; offset < symbols.length; offset += 3) {
-        await Promise.all(
-          symbols.slice(offset, offset + 3).map(async (symbol) => {
-            try {
-              marketBySymbol.set(symbol, await nse.getMarketData(symbol));
-            } catch (error) {
-              errors.push(`${symbol}: ${error.message}`);
-            }
-          }),
-        );
-      }
-
-      for (const announcement of fresh) {
-        announcement.market = marketBySymbol.get(announcement.symbol) ?? null;
-      }
-
-      const currentById = new Map(candidates.map(({ id, ...item }) => [id, item]));
+      const currentById = new Map(
+        candidates.map(({ id, ...item }) => [id, item]),
+      );
       const updatedAnnouncements = state.announcements.map((existing) => {
         const current = currentById.get(existing.id);
         return current
