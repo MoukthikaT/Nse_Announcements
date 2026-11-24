@@ -93,36 +93,62 @@ async function pollAnnouncements() {
       });
 
       const storedById = new Map(state.announcements.map((item) => [item.id, item]));
+      for (const announcement of candidates) {
+        if (announcement.category !== "orders") continue;
+        const stored = storedById.get(announcement.id);
+        if (
+          (stored?.orderValueStatus === "disclosed" ||
+            stored?.orderValueStatus === "not-disclosed") &&
+          stored.orderValueExtractionVersion === ORDER_VALUE_EXTRACTION_VERSION
+        ) {
+          announcement.orderValue = stored.orderValue;
+          announcement.orderValueStatus = stored.orderValueStatus;
+          announcement.orderValueSource = stored.orderValueSource;
+        } else if (announcement.orderValue !== "N/A") {
+          announcement.orderValueStatus = "disclosed";
+          announcement.orderValueSource = "NSE announcement";
+        } else if (announcement.link) {
+          announcement.orderValueStatus = "checking";
+          announcement.orderValueSource = "NSE PDF";
+        } else {
+          announcement.orderValueStatus = "unavailable";
+          announcement.orderValueSource = null;
+        }
+        announcement.orderValueExtractionVersion =
+          ORDER_VALUE_EXTRACTION_VERSION;
+      }
+
+      const seenIds = new Set(state.announcements.map(({ id }) => id));
+      const fresh = candidates.filter(({ id }) => {
+        if (seenIds.has(id)) return false;
+        seenIds.add(id);
+        return true;
+      });
+      const preliminaryById = new Map(
+        candidates.map(({ id, ...item }) => [id, item]),
+      );
+      const preliminaryAnnouncements = [
+        ...fresh,
+        ...state.announcements.map((existing) => {
+          const current = preliminaryById.get(existing.id);
+          return current
+            ? { ...existing, ...current, market: existing.market ?? current.market }
+            : existing;
+        }),
+      ];
+      const scannedAt = new Date().toISOString();
+      await saveState(preliminaryAnnouncements, sourceCount, scannedAt);
+      state.announcements = preliminaryAnnouncements;
+      state.sourceCount = sourceCount;
+      state.lastSuccessfulUpdate = scannedAt;
+
       for (let offset = 0; offset < candidates.length; offset += 2) {
         await Promise.all(
           candidates.slice(offset, offset + 2).map(async (announcement) => {
-            if (announcement.category !== "orders") return;
-            const stored = storedById.get(announcement.id);
             if (
-              (stored?.orderValueStatus === "disclosed" ||
-                stored?.orderValueStatus === "not-disclosed") &&
-              stored.orderValueExtractionVersion ===
-                ORDER_VALUE_EXTRACTION_VERSION
+              announcement.category !== "orders" ||
+              announcement.orderValueStatus !== "checking"
             ) {
-              announcement.orderValue = stored.orderValue;
-              announcement.orderValueStatus = stored.orderValueStatus;
-              announcement.orderValueSource = stored.orderValueSource;
-              announcement.orderValueExtractionVersion =
-                ORDER_VALUE_EXTRACTION_VERSION;
-              return;
-            }
-            if (announcement.orderValue !== "N/A") {
-              announcement.orderValueStatus = "disclosed";
-              announcement.orderValueSource = "NSE announcement";
-              announcement.orderValueExtractionVersion =
-                ORDER_VALUE_EXTRACTION_VERSION;
-              return;
-            }
-            if (!announcement.link) {
-              announcement.orderValueStatus = "unavailable";
-              announcement.orderValueSource = null;
-              announcement.orderValueExtractionVersion =
-                ORDER_VALUE_EXTRACTION_VERSION;
               return;
             }
 
@@ -151,13 +177,6 @@ async function pollAnnouncements() {
         );
       }
 
-      const seenIds = new Set(state.announcements.map(({ id }) => id));
-      const fresh = candidates.filter(({ id }) => {
-        if (seenIds.has(id)) return false;
-        seenIds.add(id);
-        return true;
-      });
-      const currentById = new Map(candidates.map(({ id, ...item }) => [id, item]));
       const symbols = [...new Set(fresh.map(({ symbol }) => symbol))];
       const marketBySymbol = new Map();
       const errors = [];
@@ -178,15 +197,13 @@ async function pollAnnouncements() {
         announcement.market = marketBySymbol.get(announcement.symbol) ?? null;
       }
 
-      const updatedAnnouncements = [
-        ...fresh,
-        ...state.announcements.map((existing) => {
-          const current = currentById.get(existing.id);
-          return current
-            ? { ...existing, ...current, market: existing.market ?? current.market }
-            : existing;
-        }),
-      ];
+      const currentById = new Map(candidates.map(({ id, ...item }) => [id, item]));
+      const updatedAnnouncements = state.announcements.map((existing) => {
+        const current = currentById.get(existing.id);
+        return current
+          ? { ...existing, ...current, market: existing.market ?? current.market }
+          : existing;
+      });
       const updatedAt = new Date().toISOString();
       await saveState(updatedAnnouncements, sourceCount, updatedAt);
       state.announcements = updatedAnnouncements;

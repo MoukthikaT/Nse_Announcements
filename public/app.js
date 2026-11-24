@@ -102,7 +102,9 @@ function renderCard(item) {
   const isOrder = item.category === "orders";
   const badge = isOrder ? "Order / contract" : "Results meeting";
   const orderValue =
-    item.orderValueStatus === "not-disclosed"
+    item.orderValueStatus === "checking"
+      ? "Checking NSE filing…"
+      : item.orderValueStatus === "not-disclosed"
       ? "Not disclosed in NSE filing"
       : item.orderValueStatus === "unavailable"
         ? "N/A · NSE document unavailable"
