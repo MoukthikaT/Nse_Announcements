@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nse-signal
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: nse-signal-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

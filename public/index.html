@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="NSE corporate announcement monitor for awarded orders and board meetings on financial results."
+    />
+    <title>NSE Signal — Corporate Announcements</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="NSE Signal home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M5 22.5 12 15l4.5 4 10-11" />
+              <path d="M20 8h6.5v6.5" />
+            </svg>
+          </span>
+          <span class="brand-copy">nse<span>signal</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="source-label"><span class="live-dot"></span>NSE official feed</span>
+          <button class="refresh-button" id="refresh-button" type="button">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M16.4 8A6.6 6.6 0 0 0 4.5 5.2L3 7" />
+              <path d="M3 3.8V7h3.2M3.6 12a6.6 6.6 0 0 0 11.9 2.8L17 13" />
+              <path d="M17 16.2V13h-3.2" />
+            </svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span>MARKET INTELLIGENCE</div>
+          <div class="intro-row">
+            <div>
+              <h1>Signals worth<br /><span>paying attention to.</span></h1>
+              <p class="intro-copy">
+                A focused view of NSE order wins and board meetings for financial results.
+                Source-linked, market-aware, and updated automatically.
+              </p>
+            </div>
+            <div class="update-card">
+              <span class="update-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="7" />
+                  <path d="M10 6v4l2.8 1.7" />
+                </svg>
+              </span>
+              <div>
+                <span class="update-label">LAST SUCCESSFUL UPDATE</span>
+                <strong id="last-updated">Waiting for first sync</strong>
+                <span class="update-frequency">Automatic refresh every minute</span>
+              </div>
+            </div>
+          </div>
+          <div class="notice" id="notice" role="status" hidden></div>
+        </section>
+
+        <section class="metrics" aria-label="Announcement counts">
+          <article class="metric-card">
+            <span class="metric-label">MATCHED ANNOUNCEMENTS</span>
+            <div class="metric-value" id="total-count">—</div>
+            <span class="metric-footnote">Across both categories</span>
+          </article>
+          <article class="metric-card metric-orders">
+            <span class="metric-label">ORDERS &amp; CONTRACTS</span>
+            <div class="metric-value" id="orders-count">—</div>
+            <span class="metric-footnote">Confirmed awards only</span>
+          </article>
+          <article class="metric-card metric-board">
+            <span class="metric-label">RESULTS BOARD MEETINGS</span>
+            <div class="metric-value" id="board-count">—</div>
+            <span class="metric-footnote">Meetings concerning results</span>
+          </article>
+        </section>
+
+        <section class="feed-section" aria-labelledby="feed-title">
+          <div class="feed-heading">
+            <div>
+              <span class="eyebrow"><span class="eyebrow-line"></span>THE LATEST</span>
+              <h2 id="feed-title">Announcement feed</h2>
+            </div>
+            <span class="result-count" id="result-count">0 announcements</span>
+          </div>
+
+          <div class="filter-bar">
+            <label class="search-wrap">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="8.8" cy="8.8" r="5.8" />
+                <path d="m13.2 13.2 4 4" />
+              </svg>
+              <input
+                type="search"
+                id="search-input"
+                placeholder="Search company or NSE symbol"
+                autocomplete="off"
+              />
+            </label>
+            <label class="select-wrap">
+              <span class="sr-only">Filter by category</span>
+              <select id="category-filter">
+                <option value="all">All categories</option>
+                <option value="orders">Orders &amp; contracts</option>
+                <option value="board-results">Results board meetings</option>
+              </select>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="m4 6 4 4 4-4" />
+              </svg>
+            </label>
+            <label class="date-wrap">
+              <span class="sr-only">Filter announcements since date</span>
+              <input id="date-filter" type="date" />
+            </label>
+          </div>
+
+          <div class="category-tabs" role="tablist" aria-label="Announcement category">
+            <button class="category-tab active" data-tab="all" type="button" role="tab" aria-selected="true">
+              All signals <span id="tab-all-count">0</span>
+            </button>
+            <button class="category-tab" data-tab="orders" type="button" role="tab" aria-selected="false">
+              <span class="tab-dot dot-orders"></span>Orders &amp; contracts
+              <span id="tab-orders-count">0</span>
+            </button>
+            <button class="category-tab" data-tab="board-results" type="button" role="tab" aria-selected="false">
+              <span class="tab-dot dot-board"></span>Results meetings
+              <span id="tab-board-count">0</span>
+            </button>
+          </div>
+
+          <div class="announcement-list" id="announcement-list" aria-live="polite">
+            <div class="empty-state">
+              <span class="empty-icon" aria-hidden="true">↗</span>
+              <strong>Connecting to the NSE feed</strong>
+              <p>Matching announcements will appear here after the first successful sync.</p>
+            </div>
+          </div>
+          <p class="data-disclaimer">
+            Data is retrieved from NSE and screened using conservative text rules. Verify each
+            source document before making decisions. Unavailable source values are shown as N/A.
+          </p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <a class="brand footer-brand" href="/">
+          <span class="brand-copy">nse<span>signal</span></span>
+        </a>
+        <span>Built for a clearer view of the market.</span>
+        <a class="footer-link" href="https://www.nseindia.com/" target="_blank" rel="noopener noreferrer">
+          National Stock Exchange of India ↗
+        </a>
+      </footer>
+    </div>
+  </body>
+</html>

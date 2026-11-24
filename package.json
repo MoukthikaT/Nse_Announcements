@@ -1,0 +1,17 @@
+{
+  "name": "nse-corporate-announcement-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pdf-parse": "^2.4.5",
+    "tesseract.js": "^7.0.0"
+  }
+}
