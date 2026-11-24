@@ -2,7 +2,7 @@ const BOARD_RESULTS_PURPOSE =
   /\b(?:board\s+meeting|meeting\s+of\s+(?:the\s+)?board|board\s+of\s+directors)\b[^.;!?]{0,180}\b(?:consider(?:ation|ing)?|adopt(?:ion|ed)?|approve|approval|take\s+on\s+record)\b[^.;!?]{0,100}\b(?:financial\s+results?|quarterly\s+results?|half[\s-]yearly\s+results?|annual\s+results?)\b|\b(?:board\s+meeting|meeting\s+of\s+(?:the\s+)?board|board\s+of\s+directors)\b[^.;!?]{0,100}\b(?:financial\s+results?|quarterly\s+results?|half[\s-]yearly\s+results?|annual\s+results?)\b[^.;!?]{0,180}\b(?:consider(?:ation|ing)?|adopt(?:ion|ed)?|approve|approval|take\s+on\s+record)\b/i;
 
 const ORDER_AWARD =
-  /\b(?:(?:has|have)\s+been\s+awarded|(?:was|were|is|are)\s+awarded)\s+(?:a|an|the)?\s*(?:new\s+)?(?:order|contract|project|work|tender)\b|\b(?:received|secured|bagged)\s+(?:a|an|the)?\s*(?:new\s+)?(?:order|contract|project|work\s+order|letter\s+of\s+(?:award|acceptance))\b|\b(?:letter\s+of\s+(?:award|acceptance)|purchase\s+order)\s+(?:has\s+been\s+)?(?:received|issued)\b/i;
+  /\b(?:(?:has|have)\s+been\s+awarded|(?:was|were|is|are)\s+awarded)\s+(?:a|an|the)?\s*(?:new\s+)?(?:order|contract|project|work|tender)\b|\b(?:received|secured|bagged)\s+(?:a|an|the)?\s*(?:new\s+)?(?:order|contract|project|work\s+order|letter\s+of\s+(?:award|acceptance|intent))\b|\b(?:letter\s+of\s+(?:award|acceptance|intent)|purchase\s+order)\s+(?:has\s+been\s+)?(?:received|issued)\b/i;
 const NOT_AN_AWARD =
   /\b(?:participat(?:ed|ing)\s+in\s+(?:the\s+)?tender|submitted\s+(?:a\s+)?bid|bid\s+(?:has\s+been\s+)?submitted|unsuccessful\s+(?:bid|tender)|not\s+(?:been\s+)?awarded|no\s+order\s+(?:has\s+been\s+)?received|tender\s+(?:invitation|notice)|invited\s+to\s+(?:bid|tender)|emerged\s+as\s+(?:the\s+)?(?:lowest|successful)\s+bidder|letter\s+of\s+intent\s+only)\b/i;
 const ISSUER_IS_AWARDER =
@@ -50,6 +50,12 @@ export function classifyAnnouncement(announcement) {
   ]
     .filter((value) => typeof value === "string")
     .join(" ");
+  const feedCategory =
+    typeof announcement.desc === "string" ? announcement.desc.trim() : "";
+  const confirmedOrderFeedCategory =
+    /^(?:bagging\/receiving of orders\/contracts|awarding of order\(s\)\/contract\(s\))$/i.test(
+      feedCategory,
+    );
   const companyName = announcement.companyName ?? announcement.sm_name;
   let companyIsAwarder = false;
   let companyIsNamedRecipient = false;
@@ -78,6 +84,7 @@ export function classifyAnnouncement(announcement) {
   }
 
   if (
+    (!feedCategory || confirmedOrderFeedCategory) &&
     (ORDER_AWARD.test(text) || companyIsNamedRecipient) &&
     !NOT_AN_AWARD.test(text) &&
     !ISSUER_IS_AWARDER.test(text) &&

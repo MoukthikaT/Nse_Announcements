@@ -7,7 +7,11 @@ import {
   extractAwardingEntity,
   extractOrderValue,
 } from "../classifier.js";
-import { normalizeAnnouncement, normalizeYahooMarketData } from "../nse.js";
+import {
+  formatNSEDate,
+  normalizeAnnouncement,
+  normalizeYahooMarketData,
+} from "../nse.js";
 
 test("includes a company announcement confirming an order award", () => {
   const match = classifyAnnouncement({
@@ -41,6 +45,38 @@ test("classifies real NSE feed fields when subject is absent", () => {
   });
   assert.equal(resultsMeeting?.category, "board-results");
   assert.match(resultsMeeting.details, /November 27, 2026/);
+});
+
+test("classifies only NSE feed categories that report an order award", () => {
+  const award = {
+    desc: "Awarding of order(s)/contract(s)",
+    sm_name: "Example Engineering Limited",
+    symbol: "EXAMPLE",
+    attchmntText:
+      "Example Engineering Limited received a Letter of Intent from Example Authority for construction work.",
+  };
+  assert.equal(classifyAnnouncement(award)?.category, "orders");
+
+  for (const desc of [
+    "Action(s) taken or orders passed",
+    "Corporate Insolvency Resolution Process",
+    "Analysts/Institutional Investor Meet/Con. Call Updates",
+  ]) {
+    assert.equal(
+      classifyAnnouncement({
+        ...award,
+        desc,
+        voiceSummary:
+          "The company received an order from the tribunal concerning a legal matter.",
+      }),
+      null,
+      desc,
+    );
+  }
+});
+
+test("formats NSE feed date ranges in India-local date format", () => {
+  assert.equal(formatNSEDate(new Date("2026-11-24T10:00:00Z")), "24-11-2026");
 });
 
 test("excludes bids, tender participation, and unconfirmed awards", () => {

@@ -5,7 +5,7 @@ A no-login dashboard for NSE corporate announcements that match two categories:
 - Confirmed orders, contracts, projects, and work awards received by the listed company.
 - Board meetings explicitly concerning consideration, adoption, or approval of financial results.
 
-The Node.js backend polls NSE's official corporate-announcements and equity-quote endpoints every minute, screens announcement text conservatively, deduplicates records, and stores announcement history in `data/announcements.json`. The backend must remain running for automatic monitoring to continue when the browser is closed. For always-on monitoring, deploy the Node process on an always-on server; opening the dashboard on a personal computer alone cannot run a closed-device background service.
+The Node.js backend polls NSE's official corporate-announcements and equity-quote endpoints every minute, scans the rolling two-day NSE announcement feed, screens announcement text conservatively, deduplicates records, and stores announcement history in `data/announcements.json`. The backend must remain running for automatic monitoring to continue when the browser is closed. For always-on monitoring, deploy the Node process on an always-on server; opening the dashboard on a personal computer alone cannot run a closed-device background service.
 
 ## Run locally
 

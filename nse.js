@@ -6,7 +6,19 @@ const NSE_ORIGIN = "https://www.nseindia.com";
 const ANNOUNCEMENTS_URL = `${NSE_ORIGIN}/api/corporate-announcements?index=equities`;
 const NSE_PAGE_URL = `${NSE_ORIGIN}/`;
 const REQUEST_TIMEOUT_MS = 25_000;
+const ANNOUNCEMENT_LOOKBACK_DAYS = 2;
 let ocrWorkerPromise;
+
+export function formatNSEDate(date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+    .format(date)
+    .replaceAll("/", "-");
+}
 
 async function getOcrWorker() {
   if (!ocrWorkerPromise) {
@@ -369,7 +381,14 @@ export class NSEClient {
   }
 
   async getAnnouncements() {
-    const data = await this.#requestJson(ANNOUNCEMENTS_URL);
+    const now = new Date();
+    const fromDate = new Date(
+      now.getTime() - ANNOUNCEMENT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const url = new URL(ANNOUNCEMENTS_URL);
+    url.searchParams.set("from_date", formatNSEDate(fromDate));
+    url.searchParams.set("to_date", formatNSEDate(now));
+    const data = await this.#requestJson(url);
     if (!Array.isArray(data)) {
       throw new Error("NSE announcement feed did not return an announcement list");
     }

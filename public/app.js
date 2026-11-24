@@ -171,7 +171,7 @@ function render() {
     const hasData = state.announcements.length > 0;
     const emptyMessage = hasData
       ? "Try a different company, category, or date."
-      : `Checked ${state.sourceCount} recent NSE announcements. No matching order award or financial-results board meeting was found in the current feed.`;
+      : `Checked ${state.sourceCount} NSE announcements from the last 2 days. No matching order award or financial-results board meeting was found in that period.`;
     elements.list.innerHTML = `<div class="empty-state">
       <span class="empty-icon" aria-hidden="true">${hasData ? "⌕" : "↗"}</span>
       <strong>${hasData ? "No announcements match these filters" : "No matching announcements yet"}</strong>
